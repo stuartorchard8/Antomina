@@ -9,6 +9,11 @@ public class TriangleGroup : MonoBehaviour {
     int x_origin = 0, y_origin = 0;
     new Rigidbody2D rigidbody;
     new PolygonCollider2D collider;
+    public static TriangleGroup triangleGroupPrefab;
+
+    float default_drag, default_angular_drag;
+    int n_triangles = 0;
+    float amount_lifted = 0f;
 
     void Awake()
     {
@@ -16,15 +21,27 @@ public class TriangleGroup : MonoBehaviour {
         collider = GetComponent<PolygonCollider2D>();
         collider.points = new Vector2[0];
         triangles[0, 0] = null;
+        default_drag = rigidbody.drag;
+        rigidbody.drag = default_drag * n_triangles;
+        default_angular_drag = rigidbody.angularDrag;
     }
 	
     public bool Add(Triangle t, int x, int y)
     {
-        if(IsTouchingGroup(x, y, t.IsPointingUpward()))
+        bool up = (x % 2) == 0;     // Whether the Triangle will point up or down.
+        if (y % 2 == 1)
         {
+            up = !up;
+        }
+        t.SetUp(up);
+        if (IsTouchingGroup(x, y, up))
+        {
+            n_triangles++;
+            UpdateDrag();
             ResizeArray(x, y);
             triangles[x + x_origin, y + y_origin] = t;
-            if(triangles.Length == 1)
+
+            if (triangles.Length == 1)
             {
                 AddFirstTriangleToCollider();
             }
@@ -106,16 +123,16 @@ public class TriangleGroup : MonoBehaviour {
                     // Default to be a mid connection
                     target_triangle_point = 0;
 
-                    // Check for right connection (x+2, x+1, x+0) or (x+0, x+1, x+2)
-                    if (indecies[0] == indecies[1] - 1 || (indecies[0] == 0 && indecies[1] == collider.points.Length - 1)    // Pointing Downward
-                     || indecies[2] == indecies[1] - 1 || (indecies[2] == 0 && indecies[1] == collider.points.Length - 1))   // Pointing Upward
+                    // Check for right connection (x+0, x+1, x+2) or (x+2, x+1, x+0)
+                    if (indecies[1] == indecies[0] - 1 || (indecies[1] == collider.points.Length - 1 && indecies[0] == 0)    // Pointing Downward
+                     || indecies[1] == indecies[2] - 1 || (indecies[1] == collider.points.Length - 1 && indecies[2] == 0))   // Pointing Upward
                     {
                         // Remove right triangle point from the collider
                         target_triangle_point = 1;
                     }
-                    // Check for left connection (x+0, x+2, x+1) or (x+1, x+2, x+0)
-                    else if (indecies[1] == indecies[2] - 1 || (indecies[1] == collider.points.Length - 1 && indecies[2] == 0)    // Pointing Downward
-                          || indecies[0] == indecies[2] - 1 || (indecies[0] == collider.points.Length - 1 && indecies[2] == 0))   // Pointing Upward
+                    // Check for left connection (x+1, x+2, x+0) or (x+0, x+2, x+1)
+                    else if (indecies[2] == indecies[1] - 1 || (indecies[2] == collider.points.Length - 1 && indecies[1] == 0)    // Pointing Downward
+                          || indecies[2] == indecies[0] - 1 || (indecies[2] == collider.points.Length - 1 && indecies[0] == 0))   // Pointing Upward
                     {
                         // Remove left triangle point from the collider
                         target_triangle_point = 2;
@@ -230,19 +247,19 @@ public class TriangleGroup : MonoBehaviour {
                     // Default to be a mid connection
                     target_triangle_point = 0;
 
-                    // Check for right connection (x+0, x+1, x+2) or (x+2, x+1, x+0)
-                    if ((indecies[0] == indecies[1] - 1 || (indecies[0] == collider.points.Length - 1 && indecies[1] == 0))     // Pointing Downward
-                    ||  (indecies[0] == indecies[1] + 1 || (indecies[0] == collider.points.Length - 1 && indecies[1] == 0)))    // Pointing Upward
-                    {
-                        // Remove right triangle point from the collider
-                        target_triangle_point = 1;
-                    }
-                    // Check for left connection (x+2, x+1, x+0) or (x+0, x+1, x+2)
-                    if ((indecies[1] == indecies[2] - 1 || (indecies[1] == collider.points.Length - 1 && indecies[2] == 0))     // Pointing Downward
-                    ||  (indecies[1] == indecies[2] + 1 || (indecies[1] == collider.points.Length + 1 && indecies[2] == 0)))     // Pointing Upward
+                    // Check for right connection (x+0, x+2, x+1) or (x+1, x+2, x+0)
+                    if ((indecies[2] == indecies[0] - 1 || (indecies[2] == collider.points.Length - 1 && indecies[0] == 0))     // Pointing Downward
+                    ||  (indecies[2] == indecies[1] - 1 || (indecies[2] == collider.points.Length - 1 && indecies[1] == 0)))    // Pointing Upward
                     {
                         // Remove left triangle point from the collider
                         target_triangle_point = 2;
+                    }
+                    // Check for left connection (x+2, x+1, x+0) or (x+0, x+1, x+2)
+                    if ((indecies[1] == indecies[2] - 1 || (indecies[1] == collider.points.Length - 1 && indecies[2] == 0))     // Pointing Downward
+                    ||  (indecies[1] == indecies[0] - 1 || (indecies[1] == collider.points.Length - 1 && indecies[0] == 0)))     // Pointing Upward
+                    {
+                        // Remove right triangle point from the collider
+                        target_triangle_point = 1;
                     }
 
                     // Replace array with an array without the removed point
@@ -284,7 +301,7 @@ public class TriangleGroup : MonoBehaviour {
             add_before = Mathf.Max(indecies[1], indecies[2]);
         }
 
-        // Make a normal connection
+        // Make an indenting removal
         new_points = new Vector2[collider.points.Length + 1];
         j = 0;
         for (i = 0; i < new_points.Length; i++)
@@ -302,18 +319,29 @@ public class TriangleGroup : MonoBehaviour {
         collider.points = new_points;
     }
 
-    // TODO
+    public void Remove(int x, int y)
+    {
+        if(triangles[x,y] != null)
+        {
+            //TODO Check for splitting
+            // Triangle might be the only thing connecting 2 clusters together.
+            n_triangles--;
+            UpdateDrag();
+            triangles[x, y] = null;
+            RemoveTriangleFromCollider(x, y);
+        }
+    }
     public void Remove(Triangle t)
     {
-        //TODO Check for splitting
-        // Triangle might be the only thing connecting 2 clusters together.
-
-        //TODO Update Collider
         for (int x = 0; x < x_length; x++)
         {
             for (int y = 0; y < y_length; y++)
             {
-                triangles[x, y] = null;
+                if(triangles[x,y] == t)
+                {
+                    Remove(x, y);
+                    return;
+                }
             }
         }
     }
@@ -454,7 +482,7 @@ public class TriangleGroup : MonoBehaviour {
     /* Splits this TileGroup in 2.
      * @return true if successful, false if failed
      */
-    public bool Split(Ant2 splitter)
+    public Rigidbody2D Split(Ant2 splitter)
     {
         for(int x = 0; x < x_length; x++)
         {
@@ -462,10 +490,29 @@ public class TriangleGroup : MonoBehaviour {
             {
                 if (triangles[x,y].Touching(splitter))
                 {
-
+                    TriangleGroup new_group = Instantiate(triangleGroupPrefab);
+                    triangles[x, y].JoinGroup(new_group, x, y);
                 }
             }
         }
-        return false;
+        return rigidbody;   
+    }
+
+    public void Lift(float strength)
+    {
+        amount_lifted += strength;
+        UpdateDrag();
+    }
+
+    public void Drop(float strength)
+    {
+        amount_lifted -= strength;
+        UpdateDrag();
+    }
+
+    public void UpdateDrag()
+    {
+        rigidbody.drag = default_drag * Mathf.Max(0, n_triangles - amount_lifted);
+        rigidbody.angularDrag = default_angular_drag * Mathf.Max(0, n_triangles - amount_lifted);
     }
 }

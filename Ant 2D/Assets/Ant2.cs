@@ -19,6 +19,7 @@ public class Ant2 : MonoBehaviour {
     public float walk_speed = 1f;
     public float rot_speed = 1f;
     public float target_distance;
+    public float strength = 1f;
 
     public enum ReverseType { invert_rotation, invert_bend }
     public ReverseType reverse_type = ReverseType.invert_bend;
@@ -214,27 +215,30 @@ public class Ant2 : MonoBehaviour {
         {
             return;
         }
-        float angle;
-        for (int i = 0; i < collision.contacts.Length; i++)
+        else if( collision.rigidbody.GetComponent<TriangleGroup>() )
         {
-            ContactPoint2D c = collision.contacts[i];
-            angle = Mathf.Atan2(c.normal.y, c.normal.x)*Mathf.Rad2Deg - transform.eulerAngles.z + 180f;
+            float angle;
+            for (int i = 0; i < collision.contacts.Length; i++)
+            {
+                ContactPoint2D c = collision.contacts[i];
+                angle = Mathf.Atan2(c.normal.y, c.normal.x) * Mathf.Rad2Deg - transform.eulerAngles.z + 180f;
 
-            // Corrective Action
-            while (angle < -180f)
-            {
-                angle += 360f;
-            }
-            while (angle > 180f)
-            {
-                angle -= 360f;
-            }
+                // Corrective Action
+                while (angle < -180f)
+                {
+                    angle += 360f;
+                }
+                while (angle > 180f)
+                {
+                    angle -= 360f;
+                }
 
-            float angle_tolerance = 90f;
-            if (Mathf.Abs(angle) < angle_tolerance/2f)
-            {
-                Grab(collision.rigidbody);
-                return;
+                float angle_tolerance = 90f;
+                if (Mathf.Abs(angle) < angle_tolerance / 2f)
+                {
+                    Grab(collision.rigidbody);
+                    return;
+                }
             }
         }
     }
@@ -245,6 +249,7 @@ public class Ant2 : MonoBehaviour {
         {
             jaws.enabled = true;
             jaws.connectedBody = other;
+            jaws.connectedBody.GetComponent<TriangleGroup>().Lift(strength);
         }
     }
 
@@ -255,7 +260,24 @@ public class Ant2 : MonoBehaviour {
 
     public void Release()
     {
+        if(jaws.connectedBody)
+        {
+            jaws.connectedBody.GetComponent<TriangleGroup>().Drop(strength);
+            jaws.connectedBody = null;
+        }
         jaws.enabled = false;
         grabbing = false;
+    }
+
+    public void Split()
+    {
+        if(jaws.enabled)
+        {
+            TriangleGroup group = jaws.connectedBody.GetComponent<TriangleGroup>();
+            if(group)
+            {
+                jaws.connectedBody = group.Split(this);
+            }
+        }
     }
 }
