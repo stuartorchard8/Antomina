@@ -513,6 +513,6 @@ public class TriangleGroup : MonoBehaviour {
     public void UpdateDrag()
     {
         rigidbody.drag = default_drag * Mathf.Max(0, n_triangles - amount_lifted);
-        rigidbody.angularDrag = default_angular_drag * Mathf.Max(0, n_triangles - amount_lifted);
+        rigidbody.angularDrag = default_angular_drag * Mathf.Max(n_triangles/2f, n_triangles - amount_lifted);
     }
 }
