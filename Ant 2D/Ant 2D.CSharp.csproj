@@ -52,9 +52,6 @@
     <Reference Include="UnityEngine">
       <HintPath>Library\UnityAssemblies\UnityEngine.dll</HintPath>
     </Reference>
-    <Reference Include="UnityEngine.Advertisements">
-      <HintPath>Library\UnityAssemblies\UnityEngine.Advertisements.dll</HintPath>
-    </Reference>
     <Reference Include="UnityEngine.UI">
       <HintPath>Library\UnityAssemblies\UnityEngine.UI.dll</HintPath>
     </Reference>
@@ -70,9 +67,6 @@
     <Reference Include="UnityEngine.HoloLens">
       <HintPath>Library\UnityAssemblies\UnityEngine.HoloLens.dll</HintPath>
     </Reference>
-    <Reference Include="UnityEngine.Purchasing">
-      <HintPath>Library\UnityAssemblies\UnityEngine.Purchasing.dll</HintPath>
-    </Reference>
     <Reference Include="UnityEngine.VR">
       <HintPath>Library\UnityAssemblies\UnityEngine.VR.dll</HintPath>
     </Reference>
@@ -81,13 +75,13 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assets\Ant.cs" />
     <Compile Include="Assets\Ant2.cs" />
     <Compile Include="Assets\Follow.cs" />
     <Compile Include="Assets\Grid.cs" />
     <Compile Include="Assets\MyVectorMath.cs" />
     <Compile Include="Assets\Player.cs" />
     <Compile Include="Assets\Triangle.cs" />
+    <Compile Include="Assets\Triangle2.cs" />
     <Compile Include="Assets\TriangleGroup.cs" />
     <Compile Include="Assets\TriggerOnKeyPress.cs" />
   </ItemGroup>

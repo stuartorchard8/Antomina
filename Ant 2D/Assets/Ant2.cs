@@ -11,7 +11,11 @@ public class Ant2 : MonoBehaviour {
     new Rigidbody2D rigidbody;
     new Collider2D collider;
     FixedJoint2D jaws;
+    ArrayList touching_triangles;
+    public int touching = 0;
+    Triangle held_triangle = null;
     bool grabbing = false;
+    bool lifting = false;
     
     public Animator bender;
     public Animator walker;
@@ -28,17 +32,19 @@ public class Ant2 : MonoBehaviour {
 
     // AI variables
     bool controlled = false;
-    float next_time = 0;
-    float wait_time = 1f;
+    //float next_time = 0;
+    //float wait_time = 1f;
     ArrayList sensedObjects = new ArrayList();
 
 
-    void Start() {
+    void Start()
+    {
         rigidbody = GetComponent<Rigidbody2D>();
         collider = GetComponent<Collider2D>();
         jaws = GetComponent<FixedJoint2D>();
         antennae.SetFloat("Offset", Random.value);
-        next_time = Time.time + Random.value * wait_time;
+        //next_time = Time.time + Random.value * wait_time;
+        touching_triangles = new ArrayList();
     }
 
     void Update()
@@ -148,6 +154,7 @@ public class Ant2 : MonoBehaviour {
     {
         motion = none;
         walker.SetBool("Walk", false);
+        UpdateLift();
     }
 
     public void WalkForward()
@@ -155,6 +162,7 @@ public class Ant2 : MonoBehaviour {
         motion = forward;
         walker.SetBool("Walk", true);
         walker.SetFloat("Speed", walk_speed);
+        UpdateLift();
     }
 
     public void WalkBackward()
@@ -162,6 +170,7 @@ public class Ant2 : MonoBehaviour {
         motion = backward;
         walker.SetBool("Walk", true);
         walker.SetFloat("Speed", -walk_speed);
+        UpdateLift();
     }
 
     public void InvertBend()
@@ -208,75 +217,103 @@ public class Ant2 : MonoBehaviour {
             sensedObjects.Remove(other);
         }
     }
-
-    void OnCollisionEnter2D(Collision2D collision)
+    
+    public void OnTriangleEnter2D(Triangle t, bool add = true)
     {
-        if (!grabbing)
+        if (add)
         {
-            return;
+            touching_triangles.Add(t);
+            touching++;
         }
-        else if( collision.rigidbody.GetComponent<TriangleGroup>() )
+        if (grabbing && !held_triangle)
         {
             float angle;
-            for (int i = 0; i < collision.contacts.Length; i++)
+            Vector2 displacement = transform.position + transform.right*1.5f - t.transform.position;
+            //ContactPoint2D c = collision.contacts[i];
+            angle = Mathf.Atan2(displacement.y, displacement.x) * Mathf.Rad2Deg - transform.eulerAngles.z + 180f;
+
+            // Corrective Action
+            while (angle < -180f)
             {
-                ContactPoint2D c = collision.contacts[i];
-                angle = Mathf.Atan2(c.normal.y, c.normal.x) * Mathf.Rad2Deg - transform.eulerAngles.z + 180f;
+                angle += 360f;
+            }
+            while (angle > 180f)
+            {
+                angle -= 360f;
+            }
 
-                // Corrective Action
-                while (angle < -180f)
-                {
-                    angle += 360f;
-                }
-                while (angle > 180f)
-                {
-                    angle -= 360f;
-                }
-
-                float angle_tolerance = 90f;
-                if (Mathf.Abs(angle) < angle_tolerance / 2f)
-                {
-                    Grab(collision.rigidbody);
-                    return;
-                }
+            float angle_tolerance = 180f;
+            if (Mathf.Abs(angle) < angle_tolerance / 2f)
+            {
+                Grab(t);
             }
         }
     }
 
-    public void Grab(Rigidbody2D other)
+    public void OnTriangleExit2D(Triangle t)
     {
-        if(other != null)
-        {
-            jaws.enabled = true;
-            jaws.connectedBody = other;
-            jaws.connectedBody.GetComponent<TriangleGroup>().Lift(strength);
-        }
+        touching_triangles.Remove(t);
+        touching--;
+    }
+
+    public void Grab(Triangle t)
+    {
+        held_triangle = t;
+        jaws.enabled = true;
+        jaws.connectedBody = t.GetRigidbody();
+        UpdateLift();
     }
 
     public void StartGrabbing()
     {
         grabbing = true;
+        for(int i = 0; i < touching_triangles.Count; i++)
+        {
+            OnTriangleEnter2D((Triangle)touching_triangles[i], false);
+        }
     }
 
     public void Release()
     {
-        if(jaws.connectedBody)
-        {
-            jaws.connectedBody.GetComponent<TriangleGroup>().Drop(strength);
-            jaws.connectedBody = null;
-        }
         jaws.enabled = false;
         grabbing = false;
+        if (held_triangle)
+        {
+            UpdateLift();
+            jaws.connectedBody = null;
+            held_triangle = null;
+        }
     }
 
     public void Split()
     {
-        if(jaws.enabled)
+        if (held_triangle)
         {
-            TriangleGroup group = jaws.connectedBody.GetComponent<TriangleGroup>();
-            if(group)
+            held_triangle.Drop(strength);
+            lifting = false;
+            jaws.connectedBody = held_triangle.Split(this);
+        }
+    }
+
+    public void UpdateLift()
+    {
+        if(held_triangle)
+        {
+            if(lifting)
             {
-                jaws.connectedBody = group.Split(this);
+                if(motion == 0 || !grabbing)
+                {
+                    held_triangle.Drop(strength);
+                    lifting = false;
+                }
+            }
+            else
+            {
+                if (motion != 0)
+                {
+                    held_triangle.Lift(strength);
+                    lifting = true;
+                }
             }
         }
     }

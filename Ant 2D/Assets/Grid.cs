@@ -13,7 +13,6 @@ public class Grid : MonoBehaviour {
 	// Use this for initialization
 	void Start () {
         group = Instantiate(triangleGroupPrefab);
-        TriangleGroup.triangleGroupPrefab = triangleGroupPrefab;
         Triangle t;
         
         for (int y = 0; y < size; y++)

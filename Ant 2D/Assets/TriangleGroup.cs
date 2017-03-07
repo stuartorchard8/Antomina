@@ -9,7 +9,6 @@ public class TriangleGroup : MonoBehaviour {
     int x_origin = 0, y_origin = 0;
     new Rigidbody2D rigidbody;
     new PolygonCollider2D collider;
-    public static TriangleGroup triangleGroupPrefab;
 
     float default_drag, default_angular_drag;
     int n_triangles = 0;
@@ -205,7 +204,7 @@ public class TriangleGroup : MonoBehaviour {
 
         // Set up the points of the triangle which was added
         Vector2[] triangle_points = new Vector2[3];
-        float height = Triangle.root3 / 2;
+        float height = Triangle.root3 / 2f;
         triangle_points[0] = new Vector2(0, height / 2f);
         triangle_points[1] = new Vector2(0.5f, -height / 2f);
         triangle_points[2] = new Vector2(-0.5f, -height / 2f);
@@ -327,8 +326,8 @@ public class TriangleGroup : MonoBehaviour {
             // Triangle might be the only thing connecting 2 clusters together.
             n_triangles--;
             UpdateDrag();
-            triangles[x, y] = null;
             RemoveTriangleFromCollider(x, y);
+            triangles[x, y] = null;
         }
     }
     public void Remove(Triangle t)
@@ -479,25 +478,6 @@ public class TriangleGroup : MonoBehaviour {
         return false;
     }
 
-    /* Splits this TileGroup in 2.
-     * @return true if successful, false if failed
-     */
-    public Rigidbody2D Split(Ant2 splitter)
-    {
-        for(int x = 0; x < x_length; x++)
-        {
-            for(int y = 0; y < y_length; y++)
-            {
-                if (triangles[x,y].Touching(splitter))
-                {
-                    TriangleGroup new_group = Instantiate(triangleGroupPrefab);
-                    triangles[x, y].JoinGroup(new_group, x, y);
-                }
-            }
-        }
-        return rigidbody;   
-    }
-
     public void Lift(float strength)
     {
         amount_lifted += strength;
@@ -512,7 +492,10 @@ public class TriangleGroup : MonoBehaviour {
 
     public void UpdateDrag()
     {
-        rigidbody.drag = default_drag * Mathf.Max(0, n_triangles - amount_lifted);
-        rigidbody.angularDrag = default_angular_drag * Mathf.Max(n_triangles/2f, n_triangles - amount_lifted);
+        float base_drag = Mathf.Max(n_triangles / 8f, n_triangles - amount_lifted);
+        rigidbody.drag = default_drag * base_drag;
+        rigidbody.angularDrag = default_angular_drag * base_drag;
     }
+
+    public Rigidbody2D GetRigidbody() { return rigidbody; }
 }

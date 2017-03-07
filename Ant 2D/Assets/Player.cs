@@ -85,5 +85,10 @@ public class Player : MonoBehaviour {
         {
             proxy.Release();
         }
+        
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            proxy.Split();
+        }
     }
 }
