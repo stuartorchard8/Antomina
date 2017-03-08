@@ -4,74 +4,94 @@ using UnityEngine;
 
 public class Triangle2 : MonoBehaviour {
 
-    public FixedJoint2D left, right, down;
+    static Vector2 left_anchor = new Vector2(-0.2165064f, 0.125f);
+    static Vector2 right_anchor = new Vector2(0.2165064f, 0.125f);
+    static Vector2 bottom_anchor = new Vector2(0, -0.25f);
     new Rigidbody2D rigidbody;
+    new PolygonCollider2D collider;
+    PolygonCollider2D recent_collision = null;
 
 	// Use this for initialization
 	void Start () {
         rigidbody = GetComponent<Rigidbody2D>();
-    }
-
-    void SetLeft(Triangle2 t, bool active)
-    {
-        left.enabled = active;
-        left.connectedBody = t.rigidbody;
-    }
-
-    void SetRight(Triangle2 t, bool active)
-    {
-        left.enabled = active;
-        left.connectedBody = t.rigidbody;
-    }
-
-    void SetBottom(Triangle2 t, bool active)
-    {
-        left.enabled = active;
-        left.connectedBody = t.rigidbody;
-    }
-
-    void ConnectWith(Triangle2 t)
-    {
-        Vector2 displacement;
-        Vector2 anchor = left.anchor;
-        anchor.Scale(transform.localScale);
-        displacement = (Vector2)transform.position - anchor;
+        collider = GetComponent<PolygonCollider2D>();
     }
 
     void OnCollisionEnter2D(Collision2D collision)
     {
-        if(collision.rigidbody.CompareTag("Triangle"))
+        if(recent_collision != collision.collider)
         {
-            Vector2 displacement = collision.rigidbody.transform.position - transform.position;
-            float distance = displacement.magnitude;
-
-            if(distance < 0.64f)
+            if (collision.rigidbody.CompareTag("Triangle"))
             {
-                float angle = Mathf.Atan2(displacement.y, displacement.x) * Mathf.Rad2Deg;
-                float angle_displacement = angle - transform.eulerAngles.z;
-                // Corrective Action
-                while (angle_displacement < -180f)
-                {
-                    angle_displacement += 360f;
-                }
-                while (angle_displacement > 180f)
-                {
-                    angle_displacement -= 360f;
-                }
+                Triangle2 other = collision.rigidbody.GetComponent<Triangle2>();
+                Vector2 displacement = collision.rigidbody.transform.position - transform.position;
+                float distance = displacement.magnitude;
 
-                if (Mathf.Abs(angle_displacement)>120f)
+                if (distance < 0.64f)
                 {
-                    // Attach to bottom of this triangle
-                }
-                else if(angle_displacement > 0f)
-                {
-                    // Attach to right of this triangle
-                }
-                else
-                {
-                    // Attach to left of this triangle
+                    float angle = Mathf.Atan2(displacement.y, displacement.x) * Mathf.Rad2Deg;
+                    float angle_displacement = angle - transform.eulerAngles.z;
+                    // Corrective Action
+                    while (angle_displacement < -180f)
+                    {
+                        angle_displacement += 360f;
+                    }
+                    while (angle_displacement > 180f)
+                    {
+                        angle_displacement -= 360f;
+                    }
+
+                    FixedJoint2D j = gameObject.AddComponent<FixedJoint2D>();
+                    j.connectedBody = other.rigidbody;
+                    // Check which side to attach on this triangle
+                    if (Mathf.Abs(angle_displacement) > 120f)
+                    {
+                        // Attach to bottom of this triangle
+                        j.anchor = bottom_anchor;
+                    }
+                    else if (angle_displacement > 0f)
+                    {
+                        // Attach to right of this triangle
+                        j.anchor = right_anchor;
+                    }
+                    else
+                    {
+                        // Attach to left of this triangle
+                        j.anchor = left_anchor;
+                    }
+
+                    float angle_displacement2 = angle - other.transform.eulerAngles.z;
+                    // Corrective Action
+                    while (angle_displacement2 < -180f)
+                    {
+                        angle_displacement2 += 360f;
+                    }
+                    while (angle_displacement2 > 180f)
+                    {
+                        angle_displacement2 -= 360f;
+                    }
+                    // Check which side to attach on the other triangle
+                    if (Mathf.Abs(angle_displacement2) < 60f)
+                    {
+                        // Attach to bottom of the other triangle
+                        j.connectedAnchor = bottom_anchor;
+                    }
+                    else if (angle_displacement2 < 0f)
+                    {
+                        // Attach to right of the other triangle
+                        j.connectedAnchor = right_anchor;
+                    }
+                    else
+                    {
+                        // Attach to left of the other triangle
+                        j.connectedAnchor = left_anchor;
+                    }
                 }
             }
+        }
+        else
+        {
+            recent_collision = null;
         }
     }
 
