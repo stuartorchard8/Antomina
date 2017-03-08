@@ -30,6 +30,14 @@ public class Triangle2 : MonoBehaviour {
         left.connectedBody = t.rigidbody;
     }
 
+    void ConnectWith(Triangle2 t)
+    {
+        Vector2 displacement;
+        Vector2 anchor = left.anchor;
+        anchor.Scale(transform.localScale);
+        displacement = (Vector2)transform.position - anchor;
+    }
+
     void OnCollisionEnter2D(Collision2D collision)
     {
         if(collision.rigidbody.CompareTag("Triangle"))
@@ -39,8 +47,32 @@ public class Triangle2 : MonoBehaviour {
 
             if(distance < 0.64f)
             {
-                float angle = Mathf.Atan2(displacement.x, displacement.y);
+                float angle = Mathf.Atan2(displacement.y, displacement.x) * Mathf.Rad2Deg;
+                float angle_displacement = angle - transform.eulerAngles.z;
+                // Corrective Action
+                while (angle_displacement < -180f)
+                {
+                    angle_displacement += 360f;
+                }
+                while (angle_displacement > 180f)
+                {
+                    angle_displacement -= 360f;
+                }
+
+                if (Mathf.Abs(angle_displacement)>120f)
+                {
+                    // Attach to bottom of this triangle
+                }
+                else if(angle_displacement > 0f)
+                {
+                    // Attach to right of this triangle
+                }
+                else
+                {
+                    // Attach to left of this triangle
+                }
             }
         }
     }
+
 }
