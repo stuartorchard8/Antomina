@@ -5,7 +5,6 @@ using UnityEngine;
 public class Player : MonoBehaviour {
 
     public Ant2 proxy;
-    public float angle;
 	
     void Start()
     {
@@ -14,7 +13,6 @@ public class Player : MonoBehaviour {
     
 	void Update ()
     {
-        angle = Mathf.Atan2(proxy.transform.position.y, proxy.transform.position.x);
         if (Input.GetKeyDown(KeyCode.W))
         {
             if (proxy.GetMotion() == Ant2.backward)
