@@ -24,13 +24,14 @@ public class Triangle2 : MonoBehaviour {
             if (collision.rigidbody.CompareTag("Triangle"))
             {
                 Triangle2 other = collision.rigidbody.GetComponent<Triangle2>();
+                other.recent_collision = collider;
                 Vector2 displacement = collision.rigidbody.transform.position - transform.position;
                 float distance = displacement.magnitude;
 
                 if (distance < 0.64f)
                 {
                     float angle = Mathf.Atan2(displacement.y, displacement.x) * Mathf.Rad2Deg;
-                    float angle_displacement = angle - transform.eulerAngles.z;
+                    float angle_displacement = angle + transform.eulerAngles.z;
                     // Corrective Action
                     while (angle_displacement < -180f)
                     {
@@ -42,7 +43,9 @@ public class Triangle2 : MonoBehaviour {
                     }
 
                     FixedJoint2D j = gameObject.AddComponent<FixedJoint2D>();
+                    j.autoConfigureConnectedAnchor = false;
                     j.connectedBody = other.rigidbody;
+                    j.breakForce = 20f;
                     // Check which side to attach on this triangle
                     if (Mathf.Abs(angle_displacement) > 120f)
                     {
@@ -60,7 +63,7 @@ public class Triangle2 : MonoBehaviour {
                         j.anchor = left_anchor;
                     }
 
-                    float angle_displacement2 = angle - other.transform.eulerAngles.z;
+                    float angle_displacement2 = angle + other.transform.eulerAngles.z;
                     // Corrective Action
                     while (angle_displacement2 < -180f)
                     {
