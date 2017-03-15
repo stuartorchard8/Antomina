@@ -77,12 +77,15 @@
   <ItemGroup>
     <Compile Include="Assets\Ant2.cs" />
     <Compile Include="Assets\Follow.cs" />
-    <Compile Include="Assets\Grid.cs" />
     <Compile Include="Assets\MyVectorMath.cs" />
     <Compile Include="Assets\Player.cs" />
-    <Compile Include="Assets\Triangle.cs" />
-    <Compile Include="Assets\Triangle2.cs" />
-    <Compile Include="Assets\TriangleGroup.cs" />
+    <Compile Include="Assets\Tiles\Grid.cs" />
+    <Compile Include="Assets\Tiles\Grid2.cs" />
+    <Compile Include="Assets\Tiles\Grid3.cs" />
+    <Compile Include="Assets\Tiles\Hexagon.cs" />
+    <Compile Include="Assets\Tiles\Triangle.cs" />
+    <Compile Include="Assets\Tiles\Triangle2.cs" />
+    <Compile Include="Assets\Tiles\TriangleGroup.cs" />
     <Compile Include="Assets\TriggerOnKeyPress.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\SyntaxTree\UnityVS\2015\UnityVS.CSharp.targets" />

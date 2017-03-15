@@ -11,9 +11,8 @@ public class Ant2 : MonoBehaviour {
     new Rigidbody2D rigidbody;
     new Collider2D collider;
     FixedJoint2D jaws;
-    ArrayList touching_triangles;
+    ArrayList touching_bodies;
     public int touching = 0;
-    Triangle held_triangle = null;
     bool grabbing = false;
     bool lifting = false;
     
@@ -44,7 +43,7 @@ public class Ant2 : MonoBehaviour {
         jaws = GetComponent<FixedJoint2D>();
         antennae.SetFloat("Offset", Random.value);
         //next_time = Time.time + Random.value * wait_time;
-        touching_triangles = new ArrayList();
+        touching_bodies = new ArrayList();
     }
 
     void Update()
@@ -217,15 +216,58 @@ public class Ant2 : MonoBehaviour {
             sensedObjects.Remove(other);
         }
     }
-    
+
+    void TryToGrab(Rigidbody2D body)
+    {
+        float angle;
+        Vector2 displacement = transform.position + transform.right * 1.5f - body.transform.position;
+        //ContactPoint2D c = collision.contacts[i];
+        angle = Mathf.Atan2(displacement.y, displacement.x) * Mathf.Rad2Deg - transform.eulerAngles.z + 180f;
+
+        // Corrective Action
+        while (angle < -180f)
+        {
+            angle += 360f;
+        }
+        while (angle > 180f)
+        {
+            angle -= 360f;
+        }
+
+        float angle_tolerance = 180f;
+        if (Mathf.Abs(angle) < angle_tolerance / 2f)
+        {
+            Grab(body);
+        }
+    }
+
+    void OnCollisionEnter2D(Collision2D collision)
+    {
+        if(collision.collider.CompareTag("Triangle") || collision.collider.CompareTag("Hexagon"))
+        {
+            touching_bodies.Add(collision.rigidbody);
+            if(grabbing && !jaws.connectedBody)
+            {
+                TryToGrab(collision.rigidbody);
+            }
+        }
+    }
+
+    void OnCollisionExit2D(Collision2D collision)
+    {
+        if (collision.collider.CompareTag("Triangle"))
+        {
+            touching_bodies.Remove(collision.rigidbody);
+        }
+    }
+
     public void OnTriangleEnter2D(Triangle t, bool add = true)
     {
         if (add)
         {
-            touching_triangles.Add(t);
-            touching++;
+            touching_bodies.Add(t.GetRigidbody());
         }
-        if (grabbing && !held_triangle)
+        if (grabbing && !jaws.connectedBody)
         {
             float angle;
             Vector2 displacement = transform.position + transform.right*1.5f - t.transform.position;
@@ -245,65 +287,52 @@ public class Ant2 : MonoBehaviour {
             float angle_tolerance = 180f;
             if (Mathf.Abs(angle) < angle_tolerance / 2f)
             {
-                Grab(t);
+                Grab(t.GetRigidbody());
             }
         }
     }
 
     public void OnTriangleExit2D(Triangle t)
     {
-        touching_triangles.Remove(t);
-        touching--;
+        touching_bodies.Remove(t.GetRigidbody());
     }
 
-    public void Grab(Triangle t)
+    public void Grab(Rigidbody2D body)
     {
-        held_triangle = t;
         jaws.enabled = true;
-        jaws.connectedBody = t.GetRigidbody();
+        jaws.connectedBody = body;
         UpdateLift();
     }
 
     public void StartGrabbing()
     {
         grabbing = true;
-        for(int i = 0; i < touching_triangles.Count; i++)
+        for(int i = 0; i < touching_bodies.Count; i++)
         {
-            OnTriangleEnter2D((Triangle)touching_triangles[i], false);
+            TryToGrab((Rigidbody2D)touching_bodies[i]);
         }
     }
 
     public void Release()
     {
-        jaws.enabled = false;
         grabbing = false;
-        if (held_triangle)
+        if (jaws.enabled)
         {
+            jaws.enabled = false;
             UpdateLift();
             jaws.connectedBody = null;
-            held_triangle = null;
-        }
-    }
-
-    public void Split()
-    {
-        if (held_triangle)
-        {
-            held_triangle.Drop(strength);
-            lifting = false;
-            jaws.connectedBody = held_triangle.Split(this);
         }
     }
 
     public void UpdateLift()
     {
-        if(held_triangle)
+        if(jaws.enabled)
         {
             if(lifting)
             {
                 if(motion == 0 || !grabbing)
                 {
-                    held_triangle.Drop(strength);
+                    //held_triangle.Drop(strength);
                     lifting = false;
                 }
             }
@@ -311,7 +340,7 @@ public class Ant2 : MonoBehaviour {
             {
                 if (motion != 0)
                 {
-                    held_triangle.Lift(strength);
+                    //held_triangle.Lift(strength);
                     lifting = true;
                 }
             }
